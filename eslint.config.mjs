@@ -7,7 +7,7 @@ import tseslint from 'typescript-eslint'
 
 export default defineConfig(
   {
-    ignores: ['eslint.config.mjs', 'prettier.config.mjs', 'prisma/**']
+    ignores: ['eslint.config.mjs', 'prettier.config.mjs']
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
@@ -15,7 +15,7 @@ export default defineConfig(
   {
     languageOptions: {
       globals: {
-        ...globals.node,
+        ...globals.node
       },
       sourceType: 'commonjs',
       parserOptions: {

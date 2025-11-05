@@ -1,5 +1,9 @@
 {
   "compilerOptions": {
+    "paths": {
+      "@generated": ["./generated/prisma/client"],
+      "~/*": ["./src/*"]
+    },
     "module": "commonjs",
     "strict": true,
     "esModuleInterop": true,
