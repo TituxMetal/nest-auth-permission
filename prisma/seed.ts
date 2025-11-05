@@ -1,13 +1,10 @@
-import { PrismaLibSQL } from '@prisma/adapter-libsql'
-import { Prisma, PrismaClient, Role, User } from './generated/prisma/client'
+import { Prisma, PrismaClient, Role, User } from '@generated'
 
 const databaseUrl = 'file:./prisma/dev.db'
 
 console.log(`Database url: ${databaseUrl}`)
 
-const prisma = new PrismaClient({
-  adapter: new PrismaLibSQL({ url: databaseUrl })
-})
+const prisma = new PrismaClient()
 
 type RoleCreateInput = Prisma.RoleCreateInput
 type UserCreateManyInput = Prisma.UserCreateManyInput
@@ -21,17 +18,17 @@ const roleDefinitions: RoleCreateInput[] = [
 const clearDatabase = async (): Promise<void> => {
   console.log('🧹 Clearing existing data...')
 
-    try {
-      await prisma.$transaction(async tx => {
-        const users = await tx.user.deleteMany()
-        console.log(`Users deleted: ${users.count}`)
+  try {
+    await prisma.$transaction(async tx => {
+      const users = await tx.user.deleteMany()
+      console.log(`Users deleted: ${users.count}`)
 
-        const roles = await tx.role.deleteMany()
-        console.log(`Roles deleted: ${roles.count}`)
-      })
-    } catch (error) {
-      console.error('❌ Clearing database failed:', error)
-    }
+      const roles = await tx.role.deleteMany()
+      console.log(`Roles deleted: ${roles.count}`)
+    })
+  } catch (error) {
+    console.error('❌ Clearing database failed:', error)
+  }
 }
 
 const seedRoles = async (): Promise<Role[]> => {
@@ -39,7 +36,10 @@ const seedRoles = async (): Promise<Role[]> => {
     roleDefinitions.map(roleData => prisma.role.create({ data: roleData }))
   )
 
-  console.log('Roles created:', roles.map(role => role.name))
+  console.log(
+    'Roles created:',
+    roles.map(role => role.name)
+  )
 
   return roles
 }
@@ -67,14 +67,14 @@ const seedUsers = async (roles: Role[]): Promise<User[]> => {
     }
   ]
 
-  const createdUsers = await Promise.all(
-    users.map(user => prisma.user.create({ data: user }))
+  const createdUsers = await Promise.all(users.map(user => prisma.user.create({ data: user })))
+
+  console.log(
+    'Users created:',
+    createdUsers.map(user => user.name)
   )
 
-  console.log('Users created:', createdUsers.map(user => user.name))
-
   return createdUsers
-
 }
 
 const seedDatabase = async (): Promise<void> => {
