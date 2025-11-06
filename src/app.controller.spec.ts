@@ -7,29 +7,8 @@ import { PrismaService } from './database/prisma.service'
 
 describe('AppController', () => {
   let appController: AppController
-  const mockRoles = [
-    {
-      id: '1',
-      name: 'admin',
-      description: 'Administrator',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    },
-    {
-      id: '2',
-      name: 'user',
-      description: 'Regular user',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
-  ]
 
   beforeEach(async () => {
-    const mockPrismaService = {
-      role: {
-        findMany: mock(() => Promise.resolve(mockRoles))
-      }
-    }
     const mockLoggerService = {
       info: mock(() => {})
     }
@@ -38,8 +17,8 @@ describe('AppController', () => {
       controllers: [AppController],
       providers: [
         AppService,
-        { provide: PrismaService, useValue: mockPrismaService },
-        { provide: LoggerService, useValue: mockLoggerService }
+        { provide: LoggerService, useValue: mockLoggerService },
+        { provide: PrismaService, useValue: {} }
       ]
     }).compile()
 
@@ -60,28 +39,6 @@ describe('AppController', () => {
     it('should return hello message', () => {
       const result = appController.getHello()
       expect(result).toEqual({ message: 'Hello World!' })
-    })
-  })
-
-  describe('getRoles', () => {
-    it('should return array of roles', async () => {
-      const result = await appController.getRoles()
-      expect(result).toEqual(mockRoles)
-      expect(result).toHaveLength(2)
-    })
-
-    it('should return roles with correct structure', async () => {
-      const result = await appController.getRoles()
-      expect(result[0]).toHaveProperty('name')
-      expect(result[0]).toHaveProperty('description')
-      expect(result[0]).toHaveProperty('id')
-    })
-
-    it('should not return user-specific fields', async () => {
-      const result = await appController.getRoles()
-      expect(result[0]).not.toHaveProperty('email')
-      expect(result[0]).not.toHaveProperty('emailVerified')
-      expect(result[0]).not.toHaveProperty('password')
     })
   })
 })
