@@ -1,12 +1,12 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
+import { AuthService as NestAuthService } from '@thallesp/nestjs-better-auth'
 import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
 import { Server } from 'node:http'
 import { LoggerService } from 'src/common/logger.service'
 import { PrismaService } from 'src/database/prisma.service'
 import request from 'supertest'
 import { AppModule } from '../src/app.module'
-import { AuthService as NestAuthService } from '@thallesp/nestjs-better-auth'
 
 type MockPrismaTransaction = {
   role: {
@@ -39,6 +39,12 @@ const mockRole = {
 const mockSignupResponse = {
   user: mockUser,
   token: 'test-session-token'
+}
+
+interface ErrorResponse {
+  statusCode: number
+  message: string | string[]
+  error: string
 }
 
 describe('Auth (e2e)', () => {
@@ -96,9 +102,10 @@ describe('Auth (e2e)', () => {
 
   describe('POST /auth/signup', () => {
     it('should successfully create a new user with valid data', async () => {
+      const data = { email: 'test@example.com', password: 'password123', name: 'Test User' }
       const response = await request(app.getHttpServer())
         .post('/auth/signup')
-        .send({ email: 'test@example.com', password: 'password123', name: 'Test User' })
+        .send(data)
         .expect(201)
 
       const body = response.body as { user: unknown; token: unknown }
@@ -109,24 +116,36 @@ describe('Auth (e2e)', () => {
     })
 
     it('should reject signup with invalid email', async () => {
-      // TODO(human): Implement validation test
-      // 1. POST to /auth/signup with invalid email (e.g., "not-an-email")
-      // 2. Expect status 400 (Bad Request)
-      // 3. Expect error message about validation
+      const data = { email: 'not-an-email', password: 'password123', name: 'Test User' }
+
+      const response = await request(app.getHttpServer()).post('/auth/signup').send(data)
+
+      const body = response.body as ErrorResponse
+      expect(body.message).toContain('email must be an email')
+      expect(body.error).toBe('Bad Request')
+      expect(body.statusCode).toBe(400)
     })
 
     it('should reject signup with short password', async () => {
-      // TODO(human): Implement validation test
-      // 1. POST to /auth/signup with password < 8 characters
-      // 2. Expect status 400
-      // 3. Check error mentions password length
+      const data = { email: 'test@example.com', password: 'pass', name: 'Test User' }
+
+      const response = await request(app.getHttpServer()).post('/auth/signup').send(data)
+
+      const body = response.body as ErrorResponse
+      expect(body.message).toContain('password must be longer than or equal to 8 characters')
+      expect(body.error).toBe('Bad Request')
+      expect(body.statusCode).toBe(400)
     })
 
     it('should reject signup with missing name', async () => {
-      // TODO(human): Implement validation test
-      // 1. POST to /auth/signup without name field
-      // 2. Expect status 400
-      // 3. Check error mentions name is required
+      const data = { email: 'test@example.com', password: 'password123' }
+
+      const response = await request(app.getHttpServer()).post('/auth/signup').send(data)
+
+      const body = response.body as ErrorResponse
+      expect(body.message).toContain('name should not be empty')
+      expect(body.error).toBe('Bad Request')
+      expect(body.statusCode).toBe(400)
     })
   })
 })
