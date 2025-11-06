@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing'
+import { ThrottlerGuard } from '@nestjs/throttler'
 import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
 import { LoggerService } from '~/common/logger.service'
 import { AuthController } from './auth.controller'
@@ -42,7 +43,10 @@ describe('AuthController', () => {
           }
         }
       ]
-    }).compile()
+    })
+      .overrideGuard(ThrottlerGuard)
+      .useValue({ canActivate: () => true })
+      .compile()
 
     controller = module.get<AuthController>(AuthController)
   })
@@ -66,7 +70,7 @@ describe('AuthController', () => {
       // Assert
       expect(mockSignup).toHaveBeenCalledWith(signupDto)
       expect(result).toEqual(mockSignupResult)
-      expect(mockInfoLogger).toHaveBeenCalledWith('Signup successful', {
+      expect(mockInfoLogger).toHaveBeenCalledWith('Signup successful in controller', {
         action: 'signup',
         signupUser: mockSignupResult
       })

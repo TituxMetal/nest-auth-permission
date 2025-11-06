@@ -1,9 +1,8 @@
 # Better Auth Implementation Session Context
 
-**Project:** nest-auth-permission
-**Branch:** feature/better-auth-implementation
-**Session Date:** 2025-11-06
-**Repository:** [nest-auth-permission](https://github.com/TituxMetal/nest-auth-permission)
+**Project:** nest-auth-permission **Branch:** feature/better-auth-implementation **Session Date:**
+2025-11-06 **Repository:**
+[nest-auth-permission](https://github.com/TituxMetal/nest-auth-permission)
 
 ---
 
