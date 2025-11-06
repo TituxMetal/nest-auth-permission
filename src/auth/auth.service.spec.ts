@@ -34,8 +34,11 @@ describe('AuthService', () => {
   let nestAuthService: NestAuthService
   let txRoleUpsert: ReturnType<typeof mock>
   let txUserUpdate: ReturnType<typeof mock>
+  let signUpEmailMock: ReturnType<typeof mock>
 
   beforeEach(async () => {
+    signUpEmailMock = mock(() => Promise.resolve(mockSignupResult))
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -43,7 +46,7 @@ describe('AuthService', () => {
           provide: NestAuthService,
           useValue: {
             api: {
-              signUpEmail: mock(() => Promise.resolve(mockSignupResult))
+              signUpEmail: signUpEmailMock
             }
           }
         },
@@ -64,13 +67,18 @@ describe('AuthService', () => {
         {
           provide: ConfigService,
           useValue: {
-            get: mock((key: string) => (key === 'ADMIN_EMAIL' ? 'admin@example.com' : undefined))
+            get: mock((key: string) => {
+              if (key === 'ADMIN_EMAIL') return 'admin@example.com'
+              if (key === 'NODE_ENV') return 'test'
+              return undefined
+            })
           }
         },
         {
           provide: LoggerService,
           useValue: {
-            info: mock(() => {})
+            info: mock(() => {}),
+            error: mock(() => {})
           }
         }
       ]
@@ -156,6 +164,22 @@ describe('AuthService', () => {
         update: {},
         create: { name: 'ADMIN', description: 'Administrator' }
       })
+    })
+
+    it('should throw generic error when Better Auth rejects duplicate email', () => {
+      // Arrange - Override the mock to throw an error (simulating duplicate email)
+      signUpEmailMock.mockImplementation(() => {
+        throw new Error('Email already in use')
+      })
+
+      const signupDto = {
+        email: 'test@example.com',
+        password: 'password123',
+        name: 'Test User'
+      }
+
+      // Act & Assert - Expect a generic error (not the specific "Email already in use")
+      expect(service.signup(signupDto)).rejects.toThrow('Unable to create account')
     })
   })
 })

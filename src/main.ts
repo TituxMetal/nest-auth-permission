@@ -6,7 +6,12 @@ import { HttpExceptionFilter } from './common/filters/httpException.filter'
 import { LoggerService } from './common/logger.service'
 
 const bootstrap = async () => {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true, bodyParser: false })
+  const appOptions = {
+    bufferLogs: true,
+    // Disabled bodyParser is required by Better Auth and managed by '@thallesp/nestjs-better-auth' package
+    bodyParser: false
+  }
+  const app = await NestFactory.create(AppModule, appOptions)
   const logger = new LoggerService('Bootstrap')
 
   // Security middleware
