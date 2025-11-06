@@ -8,7 +8,7 @@ import { LoggerService } from './common/logger.service'
 const bootstrap = async () => {
   const appOptions = {
     bufferLogs: true,
-    // Disabled bodyParser is required by Better Auth and managed by '@thallesp/nestjs-better-auth' package
+    // Disabling bodyParser is required by Better Auth and is managed by the '@thallesp/nestjs-better-auth' package
     bodyParser: false
   }
   const app = await NestFactory.create(AppModule, appOptions)
