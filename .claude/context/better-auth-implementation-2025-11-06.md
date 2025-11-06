@@ -1,7 +1,9 @@
 # Better Auth Implementation Session Context
 
-**Project:** nest-auth-permission **Branch:** feature/better-auth-implementation **Session Date:**
-2025-11-06 **Repository:** git@github.com:TituxMetal/nest-auth-permission.git
+**Project:** nest-auth-permission
+**Branch:** feature/better-auth-implementation
+**Session Date:** 2025-11-06
+**Repository:** [nest-auth-permission](https://github.com/TituxMetal/nest-auth-permission)
 
 ---
 
@@ -334,7 +336,7 @@ lsof -ti:3000 | xargs kill -9
 
 ## Current Project Structure
 
-```
+```text
 src/auth/
 ├── auth.config.ts          # Better Auth configuration factory
 ├── auth.controller.ts      # Custom signup endpoint
@@ -442,23 +444,23 @@ ALLOWED_ORIGINS="http://localhost:3000"
 
 ### Short-term
 
-4. Add login wrapper endpoint
-5. Create authorization guards (`@Roles()`)
-6. Add `@CurrentUser()` decorator
-7. Implement password change endpoint
+1. Add login wrapper endpoint
+2. Create authorization guards (`@Roles()`)
+3. Add `@CurrentUser()` decorator
+4. Implement password change endpoint
 
 ### Medium-term
 
-8. Add OAuth providers (Google, GitHub)
-9. Implement 2FA
-10. Add email verification
-11. Create user management endpoints
+1. Add OAuth providers (Google, GitHub)
+2. Implement 2FA
+3. Add email verification
+4. Create user management endpoints
 
 ### Long-term
 
-12. CASL integration for fine-grained permissions
-13. API documentation (Swagger)
-14. Production deployment configuration
+1. CASL integration for fine-grained permissions
+2. API documentation (Swagger)
+3. Production deployment configuration
 
 ---
 
@@ -470,7 +472,7 @@ ALLOWED_ORIGINS="http://localhost:3000"
 
 **Test Pyramid:**
 
-```
+```text
      E2E Tests (1 test)
     ┌─────────────────┐
     │  HTTP Flow      │
@@ -774,11 +776,11 @@ export class FeatureModule {
 
 ## Documentation Links
 
-- Better Auth: https://www.betterauth.dev
-- NestJS Better Auth: https://github.com/thallesp/nestjs-better-auth
-- Prisma Documentation: https://www.prisma.io/docs
-- NestJS Documentation: https://docs.nestjs.com
-- class-validator: https://github.com/typestack/class-validator
+- Better Auth: <https://www.betterauth.dev>
+- NestJS Better Auth: <https://github.com/thallesp/nestjs-better-auth>
+- Prisma Documentation: <https://www.prisma.io/docs>
+- NestJS Documentation: <https://docs.nestjs.com>
+- class-validator: <https://github.com/typestack/class-validator>
 
 ---
 

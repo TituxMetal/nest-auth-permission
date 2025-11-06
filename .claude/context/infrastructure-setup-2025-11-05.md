@@ -1,15 +1,18 @@
 # Nest Auth Permission - Infrastructure Setup Context
+
 **Date:** 2025-11-05
 **Project:** nest-auth-permission
-**Repository:** git@github.com:TituxMetal/nest-auth-permission.git
+**Repository:** [nest-auth-permission](https://github.com/TituxMetal/nest-auth-permission)
 **Current Branch:** develop
 **Status:** Infrastructure setup completed - PR #1 merged
 
-**Semantic Tags:** infrastructure, prisma, nestjs, security, logging, error-handling, testing, typescript
+**Semantic Tags:** infrastructure, prisma, nestjs, security, logging, error-handling, testing,
+typescript
 
 ---
 
 ## Table of Contents
+
 1. [Project Overview](#project-overview)
 2. [Architecture Overview](#architecture-overview)
 3. [Architectural Decisions](#architectural-decisions)
@@ -26,15 +29,20 @@
 ## Project Overview
 
 ### Purpose
-**nest-auth-permission** is a comprehensive NestJS application demonstrating authentication and authorization systems. The project uses a minimal e-commerce API as the use case for implementing role-based access control (RBAC) and permission management systems.
+
+**nest-auth-permission** is a comprehensive NestJS application demonstrating authentication and
+authorization systems. The project uses a minimal e-commerce API as the use case for implementing
+role-based access control (RBAC) and permission management systems.
 
 ### Current State
+
 - **Status:** Infrastructure foundation complete
 - **Version:** 0.0.1
 - **License:** MIT
 - **Author:** Titux Metal (DEV)
 
 ### Project Goals
+
 1. Establish production-ready infrastructure for authentication/authorization
 2. Implement role-based access control (RBAC) with CASL
 3. Demonstrate security best practices in NestJS
@@ -42,24 +50,26 @@
 5. Provide clear, maintainable, and scalable architecture
 
 ### Technology Stack
-| Category | Technology | Version |
-|----------|-----------|---------|
-| Runtime | Bun | Latest |
-| Framework | NestJS | 11.1.8 |
-| Language | TypeScript | 5.9.3 |
-| Database | Prisma + SQLite | 6.18.0 |
-| Testing | Bun test + supertest | Latest |
-| Security | Helmet | 8.1.0 |
-| RBAC | CASL + better-auth | 6.7.3 / 1.3.34 |
-| Password Hash | Argon2 | 0.44.0 |
-| Validation | class-validator + class-transformer | 0.14.2 / 0.5.1 |
+
+| Category      | Technology                          | Version        |
+| ------------- | ----------------------------------- | -------------- |
+| Runtime       | Bun                                 | Latest         |
+| Framework     | NestJS                              | 11.1.8         |
+| Language      | TypeScript                          | 5.9.3          |
+| Database      | Prisma + SQLite                     | 6.18.0         |
+| Testing       | Bun test + supertest                | Latest         |
+| Security      | Helmet                              | 8.1.0          |
+| RBAC          | CASL + better-auth                  | 6.7.3 / 1.3.34 |
+| Password Hash | Argon2                              | 0.44.0         |
+| Validation    | class-validator + class-transformer | 0.14.2 / 0.5.1 |
 
 ---
 
 ## Architecture Overview
 
 ### High-Level Diagram
-```
+
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                   NestJS Application                     │
 │                                                           │
@@ -110,7 +120,8 @@
 ```
 
 ### Module Hierarchy
-```
+
+```text
 AppModule (root)
 ├── ConfigModule (global)
 ├── DatabaseModule (global)
@@ -125,8 +136,9 @@ AppModule (root)
 ## Architectural Decisions
 
 ### 1. Database Layer - Prisma with Standard Client
-**Decision:** Use standard Prisma Client instead of @prisma/adapter-libsql
-**Rationale:**
+
+**Decision:** Use standard Prisma Client instead of @prisma/adapter-libsql **Rationale:**
+
 - Simpler setup for development environment
 - Full Prisma feature support without adapter limitations
 - Easier to migrate to different databases later if needed
@@ -134,11 +146,13 @@ AppModule (root)
 - SQLite for development is sufficient; production can use PostgreSQL/MySQL
 
 **Impact:**
+
 - `src/database/prisma.service.ts` provides clean lifecycle management
 - Global DatabaseModule ensures single database connection instance
 - Prisma Client generates to `@generated` alias (not in source tree)
 
 **Configuration:**
+
 ```prisma
 generator client {
   provider = "prisma-client"
@@ -153,12 +167,14 @@ datasource db {
 ```
 
 ### 2. TypeScript Path Aliases
-**Decision:** Implement custom path aliases for clean imports
-**Aliases:**
+
+**Decision:** Implement custom path aliases for clean imports **Aliases:**
+
 - `@generated` → `./generated/prisma/client` (Prisma generated files)
 - `~/*` → `./src/*` (source code relative imports)
 
 **Rationale:**
+
 - Eliminate relative path hell (../../../../) in deep nested files
 - Clearly distinguish generated vs. source code
 - Improve readability and maintainability
@@ -166,6 +182,7 @@ datasource db {
 - IDE autocomplete works seamlessly
 
 **Example Usage:**
+
 ```typescript
 // Instead of:
 import { PrismaService } from '../../../database/prisma.service'
@@ -177,6 +194,7 @@ import { LoggerService } from '~/common/logger.service'
 ```
 
 **tsconfig.json Configuration:**
+
 ```json
 {
   "compilerOptions": {
@@ -190,14 +208,16 @@ import { LoggerService } from '~/common/logger.service'
 ```
 
 ### 3. Centralized Logging with Security Awareness
-**Decision:** Custom LoggerService with automatic sensitive data sanitization
-**Rationale:**
+
+**Decision:** Custom LoggerService with automatic sensitive data sanitization **Rationale:**
+
 - **Security Compliance:** Prevent accidental credential/token leakage in logs
 - **GDPR Compliance:** Protect personally identifiable information (PII)
 - **Production Ready:** Structured JSON logging for log aggregation systems
 - **DX:** Intuitive API matching NestJS Logger interface
 
 **Key Features:**
+
 - Automatic redaction of sensitive keys: `password`, `token`, `secret`, `key`
 - Partial string masking (shows first 4 chars + redaction): `abc1234567 → abc1****`
 - Recursive sanitization for nested objects and arrays
@@ -205,11 +225,12 @@ import { LoggerService } from '~/common/logger.service'
 - Structured logging with context objects
 
 **Implementation:**
+
 ```typescript
 // Usage
 this.logger.info('User login attempt', {
   email: 'user@example.com',
-  password: 'secret123',  // Will be redacted
+  password: 'secret123', // Will be redacted
   ipAddress: '192.168.1.1'
 })
 // Output: User login attempt {"email":"user@example.com","password":"secr****","ipAddress":"192.168.1.1"}
@@ -218,14 +239,16 @@ this.logger.info('User login attempt', {
 **File:** `/src/common/logger.service.ts`
 
 ### 4. Global Error Handling with Consistent Response Format
-**Decision:** HttpExceptionFilter for unified API error responses
-**Rationale:**
+
+**Decision:** HttpExceptionFilter for unified API error responses **Rationale:**
+
 - **Consumer Experience:** Predictable error format across all endpoints
 - **Debugging:** Consistent metadata (timestamp, path, method) for all errors
 - **Security:** Control stack trace exposure (dev-only in development)
 - **Monitoring:** Structured errors for logging systems and alerts
 
 **Response Format:**
+
 ```json
 {
   "statusCode": 404,
@@ -239,6 +262,7 @@ this.logger.info('User login attempt', {
 ```
 
 **Error Handling Strategy:**
+
 - **HttpException:** Extract status code, message, and error name
 - **Standard Error:** Default to 500 INTERNAL_SERVER_ERROR
 - **Unknown Error:** Generic "unexpected error" message
@@ -248,8 +272,9 @@ this.logger.info('User login attempt', {
 **File:** `/src/common/filters/httpException.filter.ts`
 
 ### 5. Multi-Layer Security at Bootstrap
-**Decision:** Apply security middleware, validation, and CORS at application startup
-**Rationale:**
+
+**Decision:** Apply security middleware, validation, and CORS at application startup **Rationale:**
+
 - **Defense-in-depth:** Multiple security layers prevent various attack vectors
 - **Consistency:** All routes inherit security configuration
 - **Simplicity:** Single place to manage cross-cutting security concerns
@@ -280,16 +305,19 @@ this.logger.info('User login attempt', {
 4. **Global Exception Filter** - Unified error responses
 
 **Configuration:**
+
 ```typescript
 // src/main.ts
 app.use(helmet())
 app.useGlobalFilters(new HttpExceptionFilter())
-app.useGlobalPipes(new ValidationPipe({
-  whitelist: true,
-  forbidNonWhitelisted: true,
-  transform: true,
-  transformOptions: { enableImplicitConversion: true }
-}))
+app.useGlobalPipes(
+  new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+    transformOptions: { enableImplicitConversion: true }
+  })
+)
 app.enableCors({
   origin: process.env.ALLOWED_ORIGINS?.split(',') ?? ['http://localhost:3000'],
   credentials: true,
@@ -299,8 +327,9 @@ app.enableCors({
 ```
 
 ### 6. Comprehensive Test Coverage Strategy
-**Decision:** Combine unit tests and e2e tests with mocked dependencies
-**Rationale:**
+
+**Decision:** Combine unit tests and e2e tests with mocked dependencies **Rationale:**
+
 - **Isolation:** Unit tests mock dependencies for fast, reliable execution
 - **Integration:** E2E tests verify actual module wiring and behavior
 - **CI/CD:** Fast test execution (critical for development velocity)
@@ -329,10 +358,12 @@ app.enableCors({
    - Filters/Middleware: 100%
 
 **Test Files:**
+
 - Unit: `src/**/*.spec.ts` (alongside source files)
 - E2E: `test/**/*.e2e-spec.ts` (separate test directory)
 
 **Test Commands:**
+
 ```bash
 bun test                # Run all tests
 bun test --watch       # Watch mode
@@ -341,6 +372,7 @@ bun test ./test/*.e2e-spec.ts  # E2E only
 ```
 
 **Key Testing Dependencies:**
+
 - `@nestjs/testing` - NestJS test utilities
 - `supertest` - HTTP assertion library
 - Bun native test runner (no Jest/Vitest needed)
@@ -350,7 +382,8 @@ bun test ./test/*.e2e-spec.ts  # E2E only
 ## Infrastructure Setup
 
 ### Project Structure
-```
+
+```text
 nest-auth-permission/
 ├── src/
 │   ├── common/                          # Shared utilities
@@ -397,9 +430,11 @@ nest-auth-permission/
 ```
 
 ### Environment Configuration
+
 **File:** `.env`
 
 Required variables:
+
 ```bash
 # Database
 DATABASE_URL="file:./dev.db"
@@ -416,9 +451,11 @@ LOG_LEVEL="debug"
 ```
 
 ### Database Schema
+
 **File:** `prisma/schema.prisma`
 
 Core tables:
+
 - **User** - Application users with roles
 - **Role** - User roles for RBAC (admin, user, etc.)
 - **Session** - Active user sessions with expiration
@@ -426,32 +463,39 @@ Core tables:
 - **Verification** - Email verification and password reset tokens
 
 Relations:
+
 - User.role → Role (many-to-one, optional)
 - User.sessions → Session (one-to-many, cascade delete)
 - User.accounts → Account (one-to-many, cascade delete)
 
 ### Prisma Service Lifecycle
+
 **File:** `src/database/prisma.service.ts`
 
 Implements NestJS lifecycle hooks:
+
 - **onModuleInit:** Connects to database at startup
 - **onModuleDestroy:** Gracefully closes connection at shutdown
 
 Provides:
+
 - Full PrismaClient API (models, queries, transactions)
 - Exported globally via DatabaseModule
 - Used throughout application for data access
 
 ### Logging System
+
 **File:** `src/common/logger.service.ts`
 
 Features:
+
 - Automatic sensitive data redaction
 - Structured logging with JSON context
 - All NestJS log levels supported
 - Used throughout application for observability
 
 Usage:
+
 ```typescript
 constructor(private readonly logger: LoggerService) {}
 
@@ -462,14 +506,17 @@ this.logger.info('Operation successful', {
 ```
 
 ### Exception Filtering
+
 **File:** `src/common/filters/httpException.filter.ts`
 
 Applied globally at bootstrap via:
+
 ```typescript
 app.useGlobalFilters(new HttpExceptionFilter())
 ```
 
 Handles:
+
 - NestJS HttpException (validation errors, resource not found, etc.)
 - Standard JavaScript Error objects
 - Unknown/unhandled exceptions
@@ -482,14 +529,11 @@ Handles:
 ### Module Organization
 
 #### AppModule (Root)
+
 ```typescript
 // src/app.module.ts
 @Module({
-  imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
-    DatabaseModule,
-    CommonModule
-  ],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), DatabaseModule, CommonModule],
   controllers: [AppController],
   providers: [AppService]
 })
@@ -497,12 +541,14 @@ export class AppModule {}
 ```
 
 **Responsibilities:**
+
 - Load environment configuration globally
 - Import database infrastructure
 - Import common services
 - Define root routes and business logic
 
 #### DatabaseModule
+
 ```typescript
 // src/database/database.module.ts
 @Global()
@@ -514,11 +560,13 @@ export class DatabaseModule {}
 ```
 
 **Responsibilities:**
+
 - Provide PrismaService to entire application
 - Marked with @Global() for app-wide access
 - Manages database connection lifecycle
 
 #### CommonModule
+
 ```typescript
 // src/common/common.module.ts
 @Module({
@@ -529,6 +577,7 @@ export class CommonModule {}
 ```
 
 **Responsibilities:**
+
 - Export shared services
 - LoggerService injected where needed
 - Can be extended with other utilities
@@ -536,6 +585,7 @@ export class CommonModule {}
 ### Naming Conventions
 
 **Files:**
+
 - `.ts` - TypeScript source files
 - `.spec.ts` - Unit tests (alongside source)
 - `.e2e-spec.ts` - E2E tests (in /test directory)
@@ -546,6 +596,7 @@ export class CommonModule {}
 - `.pipe.ts` - Pipes/interceptors
 
 **Classes:**
+
 - `*Module` - NestJS modules
 - `*Service` - Services (injectable business logic)
 - `*Controller` - Controllers (HTTP handlers)
@@ -554,22 +605,26 @@ export class CommonModule {}
 - `*Pipe` - Data transformation pipes
 
 **Functions:**
+
 - camelCase for regular functions
 - PascalCase for class constructors
 - UPPER_CASE for constants
 
 **Variables:**
+
 - camelCase for variables and properties
 - snake_case for database column names
 
 ### Import Organization
 
 Pattern within files:
+
 1. External dependencies (NestJS, third-party)
 2. Internal modules and services
 3. Types and interfaces
 
 Example:
+
 ```typescript
 import { Injectable } from '@nestjs/common'
 import { PrismaService } from '~/database/prisma.service'
@@ -589,12 +644,14 @@ export class AppService {
 **Location:** `src/**/*.spec.ts` (alongside source files)
 
 **Approach:**
+
 - Test individual services/controllers in isolation
 - Mock all dependencies
 - Focus on business logic and edge cases
 - Fast execution (milliseconds)
 
 **Example - AppController Unit Tests:**
+
 ```typescript
 // src/app.controller.spec.ts
 describe('AppController', () => {
@@ -627,12 +684,14 @@ describe('AppController', () => {
 **Location:** `test/**/*.e2e-spec.ts` (separate directory)
 
 **Approach:**
+
 - Test complete request/response cycles
 - Module integration (all providers assembled)
 - Verify actual behavior, not implementation
 - Slower than unit tests (seconds) but more realistic
 
 **Example - Roles Endpoint E2E:**
+
 ```typescript
 // test/app.e2e-spec.ts
 describe('AppController (e2e)', () => {
@@ -653,9 +712,7 @@ describe('AppController (e2e)', () => {
   })
 
   it('/roles (GET) returns array', async () => {
-    const response = await request(app.getHttpServer())
-      .get('/roles')
-      .expect(200)
+    const response = await request(app.getHttpServer()).get('/roles').expect(200)
 
     expect(response.body).toBeInstanceOf(Array)
   })
@@ -667,6 +724,7 @@ describe('AppController (e2e)', () => {
 **File:** `test/errorHandling.e2e-spec.ts`
 
 Tests various error scenarios:
+
 - **404 Not Found** - NotFoundException
 - **400 Bad Request** - BadRequestException
 - **500 Internal Server Error** - InternalServerErrorException
@@ -675,6 +733,7 @@ Tests various error scenarios:
 - **Parametric Errors** - Dynamic error scenarios
 
 All tests verify:
+
 - Correct HTTP status code
 - Proper error response format
 - Correct error message
@@ -704,15 +763,16 @@ bun test --match "*should*"
 
 ### Coverage Goals
 
-| Category | Target |
-|----------|--------|
-| Statements | 90%+ |
-| Branches | 85%+ |
-| Functions | 90%+ |
-| Lines | 90%+ |
-| Critical Logic | 100% |
+| Category       | Target |
+| -------------- | ------ |
+| Statements     | 90%+   |
+| Branches       | 85%+   |
+| Functions      | 90%+   |
+| Lines          | 90%+   |
+| Critical Logic | 100%   |
 
 Current coverage focus:
+
 - All controllers: 100%
 - All services: 100%
 - All filters: 100%
@@ -725,17 +785,20 @@ Current coverage focus:
 ### Local Development Setup
 
 1. **Install Dependencies**
+
    ```bash
    bun install
    ```
 
 2. **Environment Configuration**
+
    ```bash
    cp .env.example .env
    # Edit .env with local settings
    ```
 
 3. **Database Setup**
+
    ```bash
    # Generate Prisma client
    bunx prisma generate
@@ -748,9 +811,11 @@ Current coverage focus:
    ```
 
 4. **Start Development Server**
+
    ```bash
    bun run dev
    ```
+
    Server runs at `http://localhost:3000` with hot reload
 
 ### Common Development Commands
@@ -790,13 +855,14 @@ bun run start:prod
 ### Git Workflow
 
 **Branch Strategy:**
+
 - `main` - Production-ready code
 - `develop` - Integration branch (default)
 - `feature/*` - Feature branches
 - `fix/*` - Bugfix branches
 
-**Commit Convention:**
-Follow conventional commits for clear history:
+**Commit Convention:** Follow conventional commits for clear history:
+
 - `feat:` - New feature
 - `fix:` - Bug fix
 - `docs:` - Documentation
@@ -807,7 +873,8 @@ Follow conventional commits for clear history:
 - `chore:` - Build, dependencies, etc.
 
 **Recent Commits (Session History):**
-```
+
+```text
 b58048c - test: add comprehensive test coverage for application features
 02bc1b7 - feat: add roles endpoint and error handling demo routes
 afb4e9b - feat: enhance application bootstrap with security and configuration
@@ -820,6 +887,7 @@ f7ebde4 - chore: configure project paths and update dependencies
 ### Hot Reload Development
 
 Bun's `--watch --hot` flags enable:
+
 - **File watching** - Detects changes in `/src`
 - **Hot reload** - Restarts server automatically
 - **No manual restart** - Immediate feedback loop
@@ -835,6 +903,7 @@ bun run dev
 ## Next Steps
 
 ### Immediate (Next Session)
+
 1. **Authentication Implementation**
    - Implement JWT-based authentication
    - User registration endpoint
@@ -855,68 +924,72 @@ bun run dev
    - Files: Create `src/guards/`, `src/decorators/`
 
 ### Short Term (1-2 Weeks)
-4. **CASL Integration**
+
+1. **CASL Integration**
    - Ability definitions for roles/permissions
    - Permission policy service
    - Integrate with guards and controllers
    - Database schema updates for granular permissions
 
-5. **API Documentation**
+2. **API Documentation**
    - Swagger/OpenAPI integration
    - Endpoint documentation with examples
    - Authentication flow diagrams
    - Database schema documentation
 
-6. **Advanced Features**
+3. **Advanced Features**
    - Two-factor authentication (2FA)
    - OAuth2/Google sign-in
    - Email verification
    - Password reset flow
 
 ### Medium Term (1 Month)
-7. **Monitoring & Observability**
+
+1. **Monitoring & Observability**
    - Request logging and tracing
    - Application metrics (Prometheus)
    - Error tracking (Sentry integration)
    - Performance monitoring
 
-8. **Database Features**
+2. **Database Features**
    - Additional audit tables (created_by, updated_by)
    - Soft deletes for users
    - Rate limiting data
    - Session management improvements
 
-9. **Deployment Readiness**
+3. **Deployment Readiness**
    - Docker containerization
    - Environment-specific configurations
    - CI/CD pipeline setup
    - Database migration strategies
 
 ### Long Term (Ongoing)
-10. **Production Hardening**
-    - Input sanitization beyond class-validator
-    - CSRF protection
-    - SQL injection prevention verification
-    - Rate limiting middleware
-    - API key management
 
-11. **Performance Optimization**
-    - Database query optimization
-    - Caching strategies (Redis)
-    - Connection pooling
-    - Query result pagination
+1. **Production Hardening**
+   - Input sanitization beyond class-validator
+   - CSRF protection
+   - SQL injection prevention verification
+   - Rate limiting middleware
+   - API key management
 
-12. **Testing Expansion**
-    - Integration tests with real database
-    - Performance/load testing
-    - Security penetration testing
-    - Contract testing for APIs
+2. **Performance Optimization**
+   - Database query optimization
+   - Caching strategies (Redis)
+   - Connection pooling
+   - Query result pagination
+
+3. **Testing Expansion**
+   - Integration tests with real database
+   - Performance/load testing
+   - Security penetration testing
+   - Contract testing for APIs
 
 ---
 
 ## Technical Debt & Known Issues
 
 ### Completed Infrastructure Todos
+
 - [x] Prisma database setup with proper schema
 - [x] Centralized logging with sanitization
 - [x] Global exception handling
@@ -926,6 +999,7 @@ bun run dev
 - [x] TypeScript strict mode configuration
 
 ### Known Limitations
+
 1. **Database**
    - Currently uses SQLite (suitable for dev only)
    - No migrations implemented yet (will be needed for team development)
@@ -947,6 +1021,7 @@ bun run dev
    - No error tracking service integration
 
 ### Future Improvements
+
 1. **Code Quality**
    - Add pre-commit hooks (husky + lint-staged)
    - Code coverage enforcement in CI
@@ -974,6 +1049,7 @@ bun run dev
 ### Key Files and Locations
 
 **Configuration:**
+
 - `package.json` - Dependencies and scripts
 - `tsconfig.json` - TypeScript configuration with path aliases
 - `.env` - Environment variables (create from .env.example)
@@ -981,27 +1057,32 @@ bun run dev
 - `prettier.config.js` - Code formatting
 
 **Database:**
+
 - `prisma/schema.prisma` - Data model definition
 - `src/database/database.module.ts` - Database module setup
 - `src/database/prisma.service.ts` - Prisma client wrapper
 
 **Infrastructure:**
+
 - `src/main.ts` - Application bootstrap with security config
 - `src/app.module.ts` - Root module setup
 - `src/common/logger.service.ts` - Logging with sanitization
 - `src/common/filters/httpException.filter.ts` - Global error handler
 
 **Example Endpoints:**
+
 - `GET /` - Health check
 - `GET /roles` - List all roles (database integration example)
 - `GET /demo/*` - Error handling demonstrations
 
 **Tests:**
+
 - `src/app.controller.spec.ts` - Unit tests
 - `test/app.e2e-spec.ts` - E2E tests
 - `test/errorHandling.e2e-spec.ts` - Error scenario tests
 
 ### External Documentation
+
 - [NestJS Official Docs](https://docs.nestjs.com/)
 - [Prisma Documentation](https://www.prisma.io/docs/)
 - [TypeScript Handbook](https://www.typescriptlang.org/docs/)
@@ -1010,6 +1091,7 @@ bun run dev
 - [Helmet Security Middleware](https://helmetjs.github.io/)
 
 ### Related Technologies
+
 - **Better Auth** - Modern authentication library for Node.js
 - **Argon2** - Password hashing algorithm
 - **Class Validator** - TypeScript validation decorators
@@ -1020,6 +1102,7 @@ bun run dev
 ## Session Summary
 
 ### Commits Created (6 total)
+
 1. **f7ebde4** - chore: configure project paths and update dependencies
 2. **47dfd8b** - feat: implement database infrastructure with Prisma
 3. **60d059d** - feat: add common infrastructure with logger and exception filter
@@ -1028,10 +1111,12 @@ bun run dev
 6. **b58048c** - test: add comprehensive test coverage for application features
 
 ### Files Modified
+
 - 21 files changed
 - +1002 additions, -95 deletions
 
 ### Key Achievements
+
 - Production-ready infrastructure foundation
 - Comprehensive security setup (Helmet, CORS, validation)
 - Structured logging with sensitive data protection
@@ -1042,8 +1127,5 @@ bun run dev
 
 ---
 
-**Document Created:** 2025-11-05
-**Framework Version:** NestJS 11.1.8
-**TypeScript Version:** 5.9.3
-**Runtime:** Bun (latest)
-**Status:** Infrastructure Setup Complete ✓
+**Document Created:** 2025-11-05 **Framework Version:** NestJS 11.1.8 **TypeScript Version:** 5.9.3
+**Runtime:** Bun (latest) **Status:** Infrastructure Setup Complete ✓
