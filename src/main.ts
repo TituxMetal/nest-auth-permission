@@ -6,7 +6,7 @@ import { HttpExceptionFilter } from './common/filters/httpException.filter'
 import { LoggerService } from './common/logger.service'
 
 const bootstrap = async () => {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true })
+  const app = await NestFactory.create(AppModule, { bufferLogs: true, bodyParser: false })
   const logger = new LoggerService('Bootstrap')
 
   // Security middleware
