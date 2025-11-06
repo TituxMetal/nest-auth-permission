@@ -6,6 +6,7 @@ import {
   NotFoundException,
   Param
 } from '@nestjs/common'
+import { AllowAnonymous } from '@thallesp/nestjs-better-auth'
 import { AppService } from './app.service'
 import { LoggerService } from './common/logger.service'
 
@@ -21,6 +22,7 @@ export class AppController {
     return this.appService.getHello()
   }
 
+  @AllowAnonymous()
   @Get('roles')
   async getRoles() {
     const roles = await this.appService.getRoles()
