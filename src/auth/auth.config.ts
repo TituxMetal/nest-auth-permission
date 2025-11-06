@@ -8,6 +8,8 @@ export const createBetterAuthConfig = (prisma: PrismaClient) => {
     database: prismaAdapter(prisma, {
       provider: 'sqlite'
     }),
+    // Disable default signup endpoint since we have a custom one that does role assignment
+    disabledPaths: ['/sign-up/email'],
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 8,
