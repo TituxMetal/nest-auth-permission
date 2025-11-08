@@ -6,6 +6,7 @@ import { AppService } from './app.service'
 import { AuthModule } from './auth/auth.module'
 import { CommonModule } from './common/common.module'
 import { DatabaseModule } from './database/database.module'
+import { UsersModule } from './users/users.module'
 
 @Module({
   imports: [
@@ -18,7 +19,8 @@ import { DatabaseModule } from './database/database.module'
     ConfigModule.forRoot({ isGlobal: true }),
     DatabaseModule,
     CommonModule,
-    AuthModule
+    AuthModule,
+    UsersModule
   ],
   controllers: [AppController],
   providers: [AppService]

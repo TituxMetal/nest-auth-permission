@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "paths": {
-      "@generated": ["./generated/prisma/client"],
+      "@generated": ["./generated/prisma/client.ts"],
       "~/*": ["./src/*"]
     },
     "module": "commonjs",
@@ -26,5 +26,7 @@
     "strictBindCallApply": true,
     "noFallthroughCasesInSwitch": true,
     "noEmit": false
-  }
+  },
+  "include": ["src/**/*", "test/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
