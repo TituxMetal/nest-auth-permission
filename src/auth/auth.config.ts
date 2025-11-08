@@ -1,4 +1,5 @@
 import { PrismaClient } from '@generated'
+import { hash, verify } from 'argon2'
 import { betterAuth, BetterAuthOptions } from 'better-auth'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
 
@@ -13,7 +14,11 @@ export const createBetterAuthConfig = (prisma: PrismaClient) => {
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 8,
-      autoSignIn: true
+      autoSignIn: true,
+      password: {
+        hash: async (password: string) => await hash(password),
+        verify: async ({ hash: hashedPassword, password }) => verify(hashedPassword, password)
+      }
     },
     session: {
       expiresIn: 60 * 60 * 24 * 7, // 7 days
