@@ -7,8 +7,7 @@ import { CommonModule } from '~/common/common.module'
 import { DatabaseModule } from '~/database/database.module'
 import { PrismaService } from '~/database/prisma.service'
 import { createBetterAuthConfig } from './auth.config'
-import { AuthController } from './auth.controller'
-import { AuthService } from './auth.service'
+import { SignupHook } from './hooks/signup.hook'
 
 @Module({
   imports: [
@@ -22,8 +21,8 @@ import { AuthService } from './auth.service'
       })
     })
   ],
-  controllers: [AuthController],
-  providers: [NestAuthService, AuthService],
-  exports: [AuthService]
+  controllers: [],
+  providers: [NestAuthService, SignupHook],
+  exports: []
 })
 export class AuthModule {}
