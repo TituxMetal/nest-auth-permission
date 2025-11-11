@@ -9,10 +9,9 @@ export const createBetterAuthConfig = (prisma: PrismaClient) => {
     database: prismaAdapter(prisma, {
       provider: 'sqlite'
     }),
-    // Disable default signup endpoint since we have a custom one that does role assignment
-    disabledPaths: ['/sign-up/email'],
     emailAndPassword: {
       enabled: true,
+      // disableSignUp: true, // Disable Better Auth's signup endpoint - we handle it ourselves!
       minPasswordLength: 8,
       autoSignIn: true,
       password: {
@@ -23,7 +22,10 @@ export const createBetterAuthConfig = (prisma: PrismaClient) => {
     session: {
       expiresIn: 60 * 60 * 24 * 7, // 7 days
       updateAge: 60 * 60 * 24 // 1 day
-    }
+    },
+    // Hooks are used to inject custom logic into Better Auth lifecycle
+    // This allows us to assign roles after user signup
+    hooks: {}
   } satisfies BetterAuthOptions
 
   return betterAuth(config)

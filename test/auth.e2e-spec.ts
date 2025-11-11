@@ -1,151 +1,161 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common'
+import { INestApplication } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
-import { AuthService as NestAuthService } from '@thallesp/nestjs-better-auth'
-import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { Server } from 'node:http'
-import { LoggerService } from 'src/common/logger.service'
-import { PrismaService } from 'src/database/prisma.service'
 import request from 'supertest'
-import { AppModule } from '../src/app.module'
+import { AppModule } from '~/app.module'
+import { PrismaService } from '~/database/prisma.service'
+import { createAuthenticatedUser } from './helpers/auth.helper'
+import { cleanupTestDatabase, setupTestDatabase, TestDatabase } from './helpers/testDatabase'
 
-type MockPrismaTransaction = {
-  role: {
-    upsert: ReturnType<typeof mock>
-  }
-  user: {
-    update: ReturnType<typeof mock>
-  }
-}
-
-const mockUser = {
-  id: 'user-123',
-  email: 'test@example.com',
-  name: 'Test User',
-  emailVerified: false,
-  image: null,
-  roleId: 'role-user-id',
-  createdAt: new Date(),
-  updatedAt: new Date()
-}
-
-const mockRole = {
-  id: 'role-user-id',
-  name: 'USER',
-  description: 'Regular user',
-  createdAt: new Date(),
-  updatedAt: new Date()
-}
-
-const mockSignupResponse = {
-  user: mockUser,
-  token: 'test-session-token'
-}
-
-interface ErrorResponse {
-  statusCode: number
-  message: string | string[]
-  error: string
+interface BetterAuthErrorResponse {
+  code: string
+  message: string
 }
 
 describe('Auth (e2e)', () => {
   let app: INestApplication<Server>
+  let testDb: TestDatabase
 
-  beforeEach(async () => {
-    const mockPrismaService = {
-      $transaction: mock(
-        <T>(callback: (tx: MockPrismaTransaction) => Promise<T>): Promise<T> =>
-          callback({
-            role: {
-              upsert: mock(() => Promise.resolve(mockRole))
-            },
-            user: {
-              update: mock(() => Promise.resolve({ ...mockUser, roleId: mockRole.id }))
-            }
-          })
-      ),
-      user: {
-        findUnique: mock(() => Promise.resolve({ ...mockUser, role: mockRole }))
-      }
-    }
-
-    const mockNestAuthService = {
-      api: {
-        signUpEmail: mock(() => Promise.resolve(mockSignupResponse))
-      }
-    }
+  beforeAll(async () => {
+    testDb = await setupTestDatabase()
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule]
     })
       .overrideProvider(PrismaService)
-      .useValue(mockPrismaService)
-      .overrideProvider(NestAuthService)
-      .useValue(mockNestAuthService)
-      .overrideProvider(LoggerService)
-      .useValue({
-        info: () => {},
-        error: () => {},
-        warn: () => {},
-        debug: () => {}
-      })
+      .useValue(testDb.prisma)
       .compile()
 
     app = moduleFixture.createNestApplication()
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
-
     await app.init()
   })
 
-  afterEach(async () => {
+  afterAll(async () => {
     await app.close()
+    await cleanupTestDatabase(testDb.prisma, testDb.dbPath)
   })
 
-  describe('POST /auth/signup', () => {
+  describe('POST /api/sign-up/email', () => {
     it('should successfully create a new user with valid data', async () => {
       const data = { email: 'test@example.com', password: 'password123', name: 'Test User' }
-      const response = await request(app.getHttpServer())
-        .post('/auth/signup')
-        .send(data)
-        .expect(201)
 
-      const body = response.body as { user: unknown; token: unknown }
-      expect(body).toHaveProperty('user')
-      expect(body).toHaveProperty('token')
-      expect(body.user).toBeDefined()
-      expect(body.token).toBeDefined()
+      const response = await request(app.getHttpServer()).post('/api/auth/sign-up/email').send(data)
+      const user = await testDb.prisma.user.findUnique({
+        where: { email: data.email },
+        include: { role: true }
+      })
+
+      expect(response.statusCode).toBe(200)
+      expect(response.headers['set-cookie']).toBeDefined()
+      expect(user).toBeDefined()
+      expect(user!.email).toBe(data.email)
+      expect(user!.role!.name).toBe('USER')
+    })
+
+    it('should successfully create an admin user when email matches ADMIN_EMAIL', async () => {
+      const data = { email: 'admin@example.com', password: 'password123', name: 'Admin User' }
+      process.env.ADMIN_EMAIL = data.email
+
+      const response = await request(app.getHttpServer()).post('/api/auth/sign-up/email').send(data)
+      const user = await testDb.prisma.user.findUnique({
+        where: { email: data.email },
+        include: { role: true }
+      })
+
+      expect(response.statusCode).toBe(200)
+      expect(response.headers['set-cookie']).toBeDefined()
+      expect(user).toBeDefined()
+      expect(user!.email).toBe(data.email)
+      expect(user!.role!.name).toBe('ADMIN')
     })
 
     it('should reject signup with invalid email', async () => {
-      const data = { email: 'not-an-email', password: 'password123', name: 'Test User' }
+      const data = { email: 'invalid-email', password: 'password123', name: 'Test User' }
 
-      const response = await request(app.getHttpServer()).post('/auth/signup').send(data)
+      const response = await request(app.getHttpServer()).post('/api/auth/sign-up/email').send(data)
+      const errorBody = response.body as BetterAuthErrorResponse
+      const user = await testDb.prisma.user.findUnique({
+        where: { email: data.email }
+      })
 
-      const body = response.body as ErrorResponse
-      expect(body.message).toContain('email must be an email')
-      expect(body.error).toBe('Bad Request')
-      expect(body.statusCode).toBe(400)
+      expect(response.statusCode).toBe(400)
+      expect(response.headers['set-cookie']).not.toBeDefined()
+      expect(errorBody.code).toEqual('INVALID_EMAIL')
+      expect(errorBody.message).toContain('Invalid email')
+      expect(user).toBeNull()
     })
 
     it('should reject signup with short password', async () => {
-      const data = { email: 'test@example.com', password: 'pass', name: 'Test User' }
+      const data = { email: 'short@example.com', password: 'short', name: 'Invalid User' }
 
-      const response = await request(app.getHttpServer()).post('/auth/signup').send(data)
+      const response = await request(app.getHttpServer()).post('/api/auth/sign-up/email').send(data)
+      const errorBody = response.body as BetterAuthErrorResponse
+      const user = await testDb.prisma.user.findUnique({
+        where: { email: data.email }
+      })
 
-      const body = response.body as ErrorResponse
-      expect(body.message).toContain('password must be longer than or equal to 8 characters')
-      expect(body.error).toBe('Bad Request')
-      expect(body.statusCode).toBe(400)
+      expect(response.statusCode).toBe(400)
+      expect(errorBody.code).toEqual('PASSWORD_TOO_SHORT')
+      expect(errorBody.message).toContain('Password too short')
+      expect(response.headers['set-cookie']).not.toBeDefined()
+      expect(user).toBeNull()
     })
 
-    it('should reject signup with missing name', async () => {
-      const data = { email: 'test@example.com', password: 'password123' }
+    it('should reject signup with duplicate email', async () => {
+      const data = { email: 'duplicate@example.com', password: 'password123', name: 'Test User' }
 
-      const response = await request(app.getHttpServer()).post('/auth/signup').send(data)
+      await request(app.getHttpServer()).post('/api/auth/sign-up/email').send(data)
 
-      const body = response.body as ErrorResponse
-      expect(body.message).toContain('name should not be empty')
-      expect(body.error).toBe('Bad Request')
-      expect(body.statusCode).toBe(400)
+      const response = await request(app.getHttpServer()).post('/api/auth/sign-up/email').send(data)
+      const errorBody = response.body as BetterAuthErrorResponse
+      const user = await testDb.prisma.user.findUnique({
+        where: { email: data.email }
+      })
+
+      expect(response.statusCode).toBe(422)
+      expect(errorBody.code).toEqual('USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL')
+      expect(errorBody.message).toContain('User already exists. Use another email.')
+      expect(response.headers['set-cookie']).not.toBeDefined()
+      expect(user).toBeDefined()
+    })
+  })
+
+  describe('POST /api/sign-in/email', () => {
+    const data = { email: 'test-sign-in@example.com', password: 'password123' }
+    beforeAll(async () => {
+      await createAuthenticatedUser(app, data)
+    })
+
+    it('should successfully sign in with valid credentials', async () => {
+      const response = await request(app.getHttpServer()).post('/api/auth/sign-in/email').send(data)
+
+      expect(response.statusCode).toBe(200)
+      expect(response.headers['set-cookie']).toBeDefined()
+    })
+
+    it('should reject sign in with invalid password', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/api/auth/sign-in/email')
+        .send({ email: data.email, password: 'wrong-password' })
+      const errorBody = response.body as BetterAuthErrorResponse
+
+      expect(response.statusCode).toBe(401)
+      expect(response.headers['set-cookie']).not.toBeDefined()
+      expect(errorBody.code).toEqual('INVALID_EMAIL_OR_PASSWORD')
+      expect(errorBody.message).toContain('Invalid email or password')
+    })
+
+    it('should reject sign in with invalid email', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/api/auth/sign-in/email')
+        .send({ email: 'wrong@example.com', password: data.password })
+      const errorBody = response.body as BetterAuthErrorResponse
+
+      expect(response.statusCode).toBe(401)
+      expect(response.headers['set-cookie']).not.toBeDefined()
+      expect(errorBody.code).toEqual('INVALID_EMAIL_OR_PASSWORD')
+      expect(errorBody.message).toContain('Invalid email or password')
     })
   })
 })

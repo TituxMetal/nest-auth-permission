@@ -37,7 +37,7 @@ const usersFactory = (numberOfUsers: number) => {
 describe('UsersService', () => {
   let service: UsersService
   let prismaFindMany: ReturnType<typeof mock>
-  let prismaFindUniqueOrThrow: ReturnType<typeof mock>
+  let prismaFindUnique: ReturnType<typeof mock>
   let prismaUpdateRole: ReturnType<typeof mock>
   let prismaDelete: ReturnType<typeof mock>
   let txCreateUser: ReturnType<typeof mock>
@@ -52,7 +52,7 @@ describe('UsersService', () => {
     const mockUser = usersFactory(1)[0]
 
     prismaFindMany = mock(() => Promise.resolve(usersFactory(10)))
-    prismaFindUniqueOrThrow = mock(() => Promise.resolve(usersFactory(1)[0]))
+    prismaFindUnique = mock(() => Promise.resolve(usersFactory(1)[0]))
     prismaUpdateRole = mock(() => Promise.resolve(mockUser))
     prismaDelete = mock(() => Promise.resolve(mockUser))
     txCreateUser = mock(() => Promise.resolve(mockUser))
@@ -79,7 +79,7 @@ describe('UsersService', () => {
           useValue: {
             user: {
               findMany: prismaFindMany,
-              findUniqueOrThrow: prismaFindUniqueOrThrow,
+              findUnique: prismaFindUnique,
               update: prismaUpdateRole,
               delete: prismaDelete
             },
@@ -154,9 +154,9 @@ describe('UsersService', () => {
       const result = await service.create(dto)
 
       expect(loggerInfo).toHaveBeenCalledTimes(2)
-      expect(result.email).toBe(dto.email)
-      expect(result.name).toBe(dto.name)
-      expect(result.role?.name).toBe('USER')
+      expect(result!.email).toBe(dto.email)
+      expect(result!.name).toBe(dto.name)
+      expect(result!.role?.name).toBe('USER')
       expect(txCreateUser).toHaveBeenCalled()
       expect(txCreateAccount).toHaveBeenCalled()
       expect(txUpsertRole).toHaveBeenCalled()
@@ -178,9 +178,9 @@ describe('UsersService', () => {
       const result = await service.update(userId, dto)
 
       expect(loggerInfo).toHaveBeenCalledTimes(2)
-      expect(result.id).toBe(userId)
-      expect(result.name).toBe(dto.name)
-      expect(result.email).toBe(dto.email)
+      expect(result!.id).toBe(userId)
+      expect(result!.name).toBe(dto.name)
+      expect(result!.email).toBe(dto.email)
       expect(txUpdateUser).toHaveBeenCalled()
       expect(txAccountUpdateMany).toHaveBeenCalled()
     })

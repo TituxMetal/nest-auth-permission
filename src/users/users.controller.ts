@@ -18,12 +18,12 @@ export class UsersController {
   }
 
   @Post()
-  async create(@Body() dto: CreateUserDto): Promise<UserWithRole> {
+  async create(@Body() dto: CreateUserDto): Promise<UserWithRole | null> {
     return this.usersService.create(dto)
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() dto: UpdateUserDto): Promise<UserWithRole> {
+  async update(@Param('id') id: string, @Body() dto: UpdateUserDto): Promise<UserWithRole | null> {
     return this.usersService.update(id, dto)
   }
 

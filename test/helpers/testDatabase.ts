@@ -11,6 +11,11 @@ export type TestDatabase = {
 
 export const setupTestDatabase = async (): Promise<TestDatabase> => {
   const dbName = `test-${randomBytes(8).toString('hex')}.db`
+  /**
+   * @copilot
+   * /dev/shm is a RAM disk on Linux systems.
+   * It is absolutely expected to NOT SUPPORT OTHER SYSTEMS AT ALL
+   */
   const dbPath = `/dev/shm/${dbName}`
   const DATABASE_URL = `file:${dbPath}`
 
@@ -37,10 +42,7 @@ export const setupTestDatabase = async (): Promise<TestDatabase> => {
   return { prisma, dbPath }
 }
 
-export const cleanupTestDatabase = async (
-  prisma: PrismaClient,
-  dbPath: string
-): Promise<void> => {
+export const cleanupTestDatabase = async (prisma: PrismaClient, dbPath: string): Promise<void> => {
   // Delete all records in correct order (respects foreign key constraints)
   // Order: child tables first, then parent tables
   await prisma.verification.deleteMany()
