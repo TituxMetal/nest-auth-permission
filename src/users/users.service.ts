@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common'
+import { Prisma } from '@generated'
+import { Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common'
 import { hash } from 'argon2'
 import { LoggerService } from '~/common/logger.service'
 import { PrismaService } from '~/database/prisma.service'
@@ -31,17 +32,30 @@ export class UsersService {
   async findOne(id: string): Promise<UserWithRole> {
     this.logger.info('Fetching user by ID in service', { action: 'findOne', userId: id })
 
-    const user = await this.prisma.user.findUniqueOrThrow({
-      where: { id },
-      include: { role: true }
-    })
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id },
+        include: { role: true }
+      })
 
-    this.logger.info('User fetched successfully in service', { action: 'findOne', userId: id })
+      if (!user) {
+        throw new NotFoundException('User not found')
+      }
 
-    return user
+      this.logger.info('User fetched successfully in service', { action: 'findOne', userId: id })
+
+      return user
+    } catch (error) {
+      this.logger.error('Failed to fetch user in service', {
+        action: 'findOne',
+        error: error instanceof Error ? error.message : String(error)
+      })
+
+      throw error
+    }
   }
 
-  async create(dto: CreateUserDto): Promise<UserWithRole> {
+  async create(dto: CreateUserDto): Promise<UserWithRole | null> {
     this.logger.info('Creating user in service', { action: 'create', email: dto.email })
 
     try {
@@ -92,11 +106,16 @@ export class UsersService {
         error: error instanceof Error ? error.message : String(error)
       })
 
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        this.logger.warn('Duplicate email detected in service', { action: 'create' })
+        throw new UnprocessableEntityException('Invalid Credentials')
+      }
+
       throw error
     }
   }
 
-  async update(id: string, dto: UpdateUserDto): Promise<UserWithRole> {
+  async update(id: string, dto: UpdateUserDto): Promise<UserWithRole | null> {
     this.logger.info('Updating user in service', { action: 'update', userId: id })
 
     try {
@@ -138,6 +157,10 @@ export class UsersService {
         error: error instanceof Error ? error.message : String(error)
       })
 
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new NotFoundException('User not found')
+      }
+
       throw error
     }
   }
@@ -164,6 +187,10 @@ export class UsersService {
         error: error instanceof Error ? error.message : String(error)
       })
 
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new NotFoundException('User not found')
+      }
+
       throw error
     }
   }
@@ -188,6 +215,10 @@ export class UsersService {
         action: 'remove',
         error: error instanceof Error ? error.message : String(error)
       })
+
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new NotFoundException('User not found')
+      }
 
       throw error
     }

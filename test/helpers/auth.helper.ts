@@ -4,10 +4,21 @@ import { Server } from 'node:http'
 import request from 'supertest'
 
 export type AuthenticatedUser = {
-  email: string
-  password: string
-  name: string
-  sessionCookie: string
+  user: {
+    id: string
+    email: string
+    name: string
+  }
+  token: string
+}
+
+export interface SignupResponse {
+  token: string
+  user: {
+    id: string
+    email: string
+    name: string
+  }
 }
 
 export const createAuthenticatedUser = async (
@@ -22,6 +33,7 @@ export const createAuthenticatedUser = async (
     .post('/api/auth/sign-up/email')
     .send({ email, password, name })
     .expect(200)
+  const body = response.body as SignupResponse
 
   const setCookieHeader = response.headers['set-cookie']
 
@@ -39,9 +51,11 @@ export const createAuthenticatedUser = async (
   }
 
   return {
-    email,
-    password,
-    name,
-    sessionCookie
+    user: {
+      id: body.user.id,
+      email: body.user.email,
+      name: body.user.name
+    },
+    token: sessionCookie
   }
 }
