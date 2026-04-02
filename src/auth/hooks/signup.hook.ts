@@ -79,7 +79,10 @@ export class SignupHook {
         create: { name: adminOrUserRole, description: isAdmin ? 'Administrator' : 'Regular user' }
       })
 
-      return await tx.user.update({ where: { email }, data: { roleId: role.id } })
+      return await tx.user.update({
+        where: { email },
+        data: { roleId: role.id, roleName: role.name }
+      })
     })
   }
 }

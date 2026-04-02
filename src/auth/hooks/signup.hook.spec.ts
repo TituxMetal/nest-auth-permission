@@ -97,7 +97,7 @@ describe('SignupHook', () => {
       })
       expect(txUserUpdate).toHaveBeenCalledWith({
         where: { email: ctx.body.email },
-        data: { roleId: 'role-user-id' }
+        data: { roleId: 'role-user-id', roleName: 'USER' }
       })
     })
 
@@ -122,7 +122,7 @@ describe('SignupHook', () => {
       })
       expect(txUserUpdate).toHaveBeenCalledWith({
         where: { email: ctx.body.email },
-        data: { roleId: 'role-admin-id' }
+        data: { roleId: 'role-admin-id', roleName: 'ADMIN' }
       })
     })
 
@@ -147,7 +147,7 @@ describe('SignupHook', () => {
       })
       expect(txUserUpdate).toHaveBeenCalledWith({
         where: { email: ctx.body.email },
-        data: { roleId: 'role-admin-id' }
+        data: { roleId: 'role-admin-id', roleName: 'ADMIN' }
       })
     })
 
