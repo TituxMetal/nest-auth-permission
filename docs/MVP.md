@@ -37,11 +37,11 @@ workflow (status transitions).
 
 ### 2. E-commerce Domain — Products
 
-- [ ] Product model (name, description, price, stock)
-- [ ] Products CRUD endpoints
-- [ ] Permission rules with `@Roles`: ADMIN manages all, USER reads only
-- [ ] Input validation with class-validator DTOs
-- [ ] Unit tests and E2E tests
+- [x] Product model (name, description, price, stock)
+- [x] Products CRUD endpoints
+- [x] Permission rules with `@Roles`: ADMIN manages all, USER reads only
+- [x] Input validation with class-validator DTOs
+- [x] Unit tests and E2E tests
 
 ### 3. E-commerce Domain — Orders + CASL Authorization
 
