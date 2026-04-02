@@ -27,38 +27,34 @@ workflow (status transitions).
 
 ## MVP Core Features
 
-### 1. Auth Guards
+### 1. Auth Guards (done)
 
-- [ ] Create authentication guard that validates session from Better Auth
-- [ ] Extract current user from session and attach to request
-- [ ] Protect routes with `@UseGuards(AuthGuard)`
-- [ ] Allow public routes via `@Public()` decorator
-- [ ] Return 401 for unauthenticated requests
+- [x] Global AuthGuard from `@thallesp/nestjs-better-auth`
+- [x] Session enrichment with role via Better Auth additionalFields
+- [x] `@Roles(['ADMIN'])` on Users write operations
+- [x] `@AllowAnonymous()` on public routes
+- [x] E2E tests for 401/403/200 scenarios
 
-### 2. CASL Authorization
+### 2. E-commerce Domain — Products
 
-- [ ] Define abilities per role (ADMIN, USER)
-- [ ] Create CASL ability factory based on user role
-- [ ] Create authorization guard that checks abilities
-- [ ] Create `@CheckAbility()` decorator for route-level permissions
-- [ ] Integrate with existing Users module (ADMIN-only write operations)
-
-### 3. E-commerce Domain — Products
-
-- [ ] Product model (name, description, price, stock, ownerId)
+- [ ] Product model (name, description, price, stock)
 - [ ] Products CRUD endpoints
-- [ ] Permission rules: ADMIN manages all, USER reads only
+- [ ] Permission rules with `@Roles`: ADMIN manages all, USER reads only
 - [ ] Input validation with class-validator DTOs
+- [ ] Unit tests and E2E tests
 
-### 4. E-commerce Domain — Orders
+### 3. E-commerce Domain — Orders + CASL Authorization
 
 - [ ] Order model (userId, items, total, status)
 - [ ] OrderItem model (orderId, productId, quantity, price)
 - [ ] Orders CRUD endpoints
-- [ ] Permission rules: USER manages own orders, ADMIN manages all
+- [ ] CASL ability factory (role → permissions with ownership conditions)
+- [ ] CASL guard and permission decorator
+- [ ] Permission rules: USER manages own orders only, ADMIN manages all
 - [ ] Stock validation on order creation
+- [ ] Unit tests and E2E tests
 
-### 5. API Documentation
+### 4. API Documentation
 
 - [ ] Swagger/OpenAPI setup with `@nestjs/swagger`
 - [ ] Document all endpoints with decorators
@@ -80,11 +76,10 @@ workflow (status transitions).
 
 ## Build Order
 
-1. **Auth Guards** — prerequisite for all protected routes
-2. **CASL Authorization** — requires auth guards to identify the user
-3. **Products** — first domain model to exercise permissions
-4. **Orders** — second domain model with ownership-based permissions
-5. **API Documentation** — after API surface is stable
+1. ~~**Auth Guards**~~ — done
+2. **Products** — first domain model, same `@Roles` pattern as Users
+3. **Orders + CASL** — ownership-based permissions require CASL
+4. **API Documentation** — after API surface is stable
 
 ## "Done" Criteria
 
