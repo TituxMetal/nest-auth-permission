@@ -55,7 +55,7 @@ export class UsersService {
     }
   }
 
-  async create(dto: CreateUserDto): Promise<UserWithRole | null> {
+  async create(dto: CreateUserDto): Promise<UserWithRole> {
     this.logger.info('Creating user in service', { action: 'create', email: dto.email })
 
     try {
@@ -127,7 +127,7 @@ export class UsersService {
     }
   }
 
-  async update(id: string, dto: UpdateUserDto): Promise<UserWithRole | null> {
+  async update(id: string, dto: UpdateUserDto): Promise<UserWithRole> {
     this.logger.info('Updating user in service', { action: 'update', userId: id })
 
     try {

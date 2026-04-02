@@ -62,7 +62,8 @@ describe('SignupHook', () => {
           provide: LoggerService,
           useValue: {
             info: mock(() => {}),
-            error: mock(() => {})
+            error: mock(() => {}),
+            debug: mock(() => {})
           }
         }
       ]
