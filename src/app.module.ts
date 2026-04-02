@@ -6,6 +6,7 @@ import { AppService } from './app.service'
 import { AuthModule } from './auth/auth.module'
 import { CommonModule } from './common/common.module'
 import { DatabaseModule } from './database/database.module'
+import { ProductsModule } from './products/products.module'
 import { UsersModule } from './users/users.module'
 
 @Module({
@@ -20,7 +21,8 @@ import { UsersModule } from './users/users.module'
     DatabaseModule,
     CommonModule,
     AuthModule,
-    UsersModule
+    UsersModule,
+    ProductsModule
   ],
   controllers: [AppController],
   providers: [AppService]
