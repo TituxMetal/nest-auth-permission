@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient, Role, User } from '@generated'
+import { Prisma, PrismaClient, Product, Role, User } from '@generated'
 
 const databaseUrl = 'file:./prisma/dev.db'
 
@@ -8,6 +8,7 @@ const prisma = new PrismaClient()
 
 type RoleCreateInput = Prisma.RoleCreateInput
 type UserCreateManyInput = Prisma.UserCreateManyInput
+type ProductCreateInput = Prisma.ProductCreateInput
 
 const roleDefinitions: RoleCreateInput[] = [
   { name: 'ADMIN', description: 'Administrator role' },
@@ -20,6 +21,9 @@ const clearDatabase = async (): Promise<void> => {
 
   try {
     await prisma.$transaction(async tx => {
+      const products = await tx.product.deleteMany()
+      console.log(`Products deleted: ${products.count}`)
+
       const users = await tx.user.deleteMany()
       console.log(`Users deleted: ${users.count}`)
 
@@ -80,6 +84,40 @@ const seedUsers = async (roles: Role[]): Promise<User[]> => {
   return createdUsers
 }
 
+const seedProducts = async (): Promise<Product[]> => {
+  const productDefinitions: ProductCreateInput[] = [
+    {
+      name: 'Product A',
+      description: 'Description for Product A',
+      price: 19.99,
+      stock: 100
+    },
+    {
+      name: 'Product B',
+      description: 'Description for Product B',
+      price: 29.99,
+      stock: 50
+    },
+    {
+      name: 'Product C',
+      description: 'Description for Product C',
+      price: 9.99,
+      stock: 200
+    }
+  ]
+
+  const products = await Promise.all(
+    productDefinitions.map(productData => prisma.product.create({ data: productData }))
+  )
+
+  console.log(
+    'Products created:',
+    products.map(product => product.name)
+  )
+
+  return products
+}
+
 const seedDatabase = async (): Promise<void> => {
   console.log('👤 Seeding roles...')
   const roles = await seedRoles()
@@ -88,6 +126,10 @@ const seedDatabase = async (): Promise<void> => {
   console.log('👤 Seeding users...')
   const users = await seedUsers(roles)
   console.log(`Created ${users.length} users`)
+
+  console.log('📦 Seeding products...')
+  const products = await seedProducts()
+  console.log(`Created ${products.length} products`)
 }
 
 const main = async (): Promise<void> => {

@@ -74,6 +74,18 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+// Product table
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  stock       Int      @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 // Verification table (for email verification, password reset, etc.)
 model Verification {
   id        String   @id @default(cuid())
