@@ -8,6 +8,7 @@ export type AuthenticatedUser = {
     id: string
     email: string
     name: string
+    role: string
   }
   token: string
 }
@@ -54,8 +55,31 @@ export const createAuthenticatedUser = async (
     user: {
       id: body.user.id,
       email: body.user.email,
-      name: body.user.name
+      name: body.user.name,
+      role: 'USER'
     },
     token: sessionCookie
+  }
+}
+
+const ADMIN_EMAIL = 'admin-test@example.com'
+
+export const createAdminUser = async (
+  app: INestApplication<Server>,
+  userData?: { password?: string; name?: string }
+): Promise<AuthenticatedUser> => {
+  process.env.ADMIN_EMAIL = ADMIN_EMAIL
+  const password = userData?.password ?? 'password123'
+  const name = userData?.name ?? 'Admin User'
+
+  const result = await createAuthenticatedUser(app, {
+    email: ADMIN_EMAIL,
+    password,
+    name
+  })
+
+  return {
+    ...result,
+    user: { ...result.user, role: 'ADMIN' }
   }
 }
