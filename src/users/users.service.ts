@@ -64,6 +64,8 @@ export class UsersService {
       const user = await this.prisma.$transaction(async tx => {
         let roleId = dto.roleId
 
+        let roleName: string | undefined
+
         if (!roleId) {
           const userRole = await tx.role.upsert({
             where: { name: 'USER' },
@@ -72,6 +74,15 @@ export class UsersService {
           })
 
           roleId = userRole.id
+          roleName = userRole.name
+        } else {
+          const role = await tx.role.findUnique({ where: { id: roleId } })
+
+          if (!role) {
+            throw new NotFoundException('Role not found')
+          }
+
+          roleName = role.name
         }
 
         const createdUser = await tx.user.create({
@@ -79,7 +90,8 @@ export class UsersService {
           data: {
             email: dto.email,
             name: dto.name,
-            roleId
+            roleId,
+            roleName
           }
         })
         await tx.account.create({
@@ -169,10 +181,18 @@ export class UsersService {
     this.logger.info('Updating user role in service', { action: 'updateRole', userId: id, roleId })
 
     try {
-      const updatedUser = await this.prisma.user.update({
-        where: { id },
-        data: { roleId },
-        include: { role: true }
+      const updatedUser = await this.prisma.$transaction(async tx => {
+        const role = await tx.role.findUnique({ where: { id: roleId } })
+
+        if (!role) {
+          throw new NotFoundException('Role not found')
+        }
+
+        return await tx.user.update({
+          where: { id },
+          data: { roleId, roleName: role.name },
+          include: { role: true }
+        })
       })
 
       this.logger.info('User role updated successfully in service', {
@@ -186,6 +206,10 @@ export class UsersService {
         action: 'updateRole',
         error: error instanceof Error ? error.message : String(error)
       })
+
+      if (error instanceof NotFoundException) {
+        throw error
+      }
 
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
         throw new NotFoundException('User not found')

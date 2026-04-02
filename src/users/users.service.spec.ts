@@ -16,6 +16,7 @@ const usersFactory = (numberOfUsers: number) => {
       name: `User ${i}`,
       emailVerified: false,
       image: null,
+      roleName: roles[(i - 1) % 3],
       roleId: `role-${i}`,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -45,6 +46,7 @@ describe('UsersService', () => {
   let txUpsertRole: ReturnType<typeof mock>
   let txUpdateUser: ReturnType<typeof mock>
   let txAccountUpdateMany: ReturnType<typeof mock>
+  let prismaRoleFindUnique: ReturnType<typeof mock>
   let loggerInfo: ReturnType<typeof mock>
   let loggerError: ReturnType<typeof mock>
 
@@ -68,6 +70,15 @@ describe('UsersService', () => {
     )
     txUpdateUser = mock(() => Promise.resolve(mockUser))
     txAccountUpdateMany = mock(() => Promise.resolve({}))
+    prismaRoleFindUnique = mock(() =>
+      Promise.resolve({
+        id: 'role-1',
+        name: 'USER',
+        description: 'Regular user',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+    )
     loggerInfo = mock(() => {})
     loggerError = mock(() => {})
 
@@ -83,9 +94,15 @@ describe('UsersService', () => {
               update: prismaUpdateRole,
               delete: prismaDelete
             },
+            role: {
+              findUnique: prismaRoleFindUnique
+            },
             $transaction: mock((callback: (tx: Partial<PrismaService>) => Promise<unknown>) => {
               return callback({
-                role: { upsert: txUpsertRole } as unknown as PrismaService['role'],
+                role: {
+                  upsert: txUpsertRole,
+                  findUnique: prismaRoleFindUnique
+                } as unknown as PrismaService['role'],
                 user: {
                   create: txCreateUser,
                   update: txUpdateUser
@@ -190,21 +207,29 @@ describe('UsersService', () => {
     it('should update the user role by its ID and return the updated user', async () => {
       const userId = 'user-1'
       const roleId = 'role-2'
+      const updatedUser = { ...usersFactory(1)[0], roleId }
 
-      prismaUpdateRole.mockImplementationOnce(() =>
-        Promise.resolve({ ...usersFactory(1)[0], roleId })
-      )
+      txUpdateUser.mockImplementationOnce(() => Promise.resolve(updatedUser))
       const result = await service.updateRole(userId, roleId)
 
       expect(loggerInfo).toHaveBeenCalledTimes(2)
       expect(result.id).toBe(userId)
       expect(result.roleId).toBe(roleId)
-      expect(prismaUpdateRole).toHaveBeenCalled()
-      expect(prismaUpdateRole).toHaveBeenCalledWith({
+      expect(prismaRoleFindUnique).toHaveBeenCalledWith({ where: { id: roleId } })
+      expect(txUpdateUser).toHaveBeenCalledWith({
         where: { id: userId },
-        data: { roleId },
+        data: { roleId, roleName: 'USER' },
         include: { role: true }
       })
+    })
+
+    it('should throw NotFoundException when role does not exist', () => {
+      const userId = 'user-1'
+      const roleId = 'non-existent-role'
+
+      prismaRoleFindUnique.mockImplementationOnce(() => Promise.resolve(null))
+
+      expect(service.updateRole(userId, roleId)).rejects.toThrow('Role not found')
     })
   })
 
