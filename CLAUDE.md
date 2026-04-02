@@ -1,5 +1,12 @@
 # NestJS Auth & Permission System
 
+## Before Acting
+
+- Read relevant skill files and project docs BEFORE starting work. Do not duplicate skill contents
+  into memory.
+- Check current project/branch/VM state before giving instructions or making assumptions.
+- Never assume infrastructure is verified — actually run commands to check.
+
 ## Project Overview
 
 A comprehensive authentication and authorization demonstration using NestJS, featuring a minimal
