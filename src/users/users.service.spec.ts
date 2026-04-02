@@ -178,6 +178,19 @@ describe('UsersService', () => {
       expect(txCreateAccount).toHaveBeenCalled()
       expect(txUpsertRole).toHaveBeenCalled()
     })
+
+    it('should throw NotFoundException when provided roleId does not exist', () => {
+      const dto = {
+        email: 'user-invalid-role@example.com',
+        name: 'User Invalid Role',
+        password: 'password123',
+        roleId: 'non-existent-role'
+      }
+
+      prismaRoleFindUnique.mockImplementationOnce(() => Promise.resolve(null))
+
+      expect(service.create(dto)).rejects.toThrow('Role not found')
+    })
   })
 
   describe('update', () => {
