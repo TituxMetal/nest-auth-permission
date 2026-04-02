@@ -6,7 +6,7 @@ import request from 'supertest'
 import { AppModule } from '~/app.module'
 import { PrismaService } from '~/database/prisma.service'
 import { UserWithRole } from '~/users/types'
-import { AuthenticatedUser, createAuthenticatedUser } from './helpers/auth.helper'
+import { AuthenticatedUser, createAdminUser, createAuthenticatedUser } from './helpers/auth.helper'
 import { cleanupTestDatabase, setupTestDatabase, TestDatabase } from './helpers/testDatabase'
 
 interface ErrorResponse {
@@ -19,6 +19,7 @@ describe('Users (e2e)', () => {
   let app: INestApplication<Server>
   let testDb: TestDatabase
   let authenticatedUser: AuthenticatedUser
+  let adminUser: AuthenticatedUser
 
   beforeAll(async () => {
     testDb = await setupTestDatabase()
@@ -40,6 +41,7 @@ describe('Users (e2e)', () => {
     )
     await app.init()
 
+    adminUser = await createAdminUser(app)
     authenticatedUser = await createAuthenticatedUser(app, { email: 'auth@example.com' })
   })
 
@@ -57,7 +59,7 @@ describe('Users (e2e)', () => {
 
       expect(response.statusCode).toBe(200)
       expect(responseBody).toBeInstanceOf(Array)
-      expect(responseBody.length).toBe(1)
+      expect(responseBody.length).toBe(2)
     })
   })
 
@@ -96,7 +98,7 @@ describe('Users (e2e)', () => {
       const response = await request(app.getHttpServer())
         .post('/users')
         .send(data)
-        .set('Cookie', authenticatedUser.token)
+        .set('Cookie', adminUser.token)
       const user = (await testDb.prisma.user.findUnique({
         where: { email: data.email },
         include: { role: true }
@@ -117,7 +119,7 @@ describe('Users (e2e)', () => {
       const response = await request(app.getHttpServer())
         .post('/users')
         .send(data)
-        .set('Cookie', authenticatedUser.token)
+        .set('Cookie', adminUser.token)
       const responseBody = response.body as ErrorResponse
 
       expect(response.statusCode).toBe(400)
@@ -136,7 +138,7 @@ describe('Users (e2e)', () => {
       const response = await request(app.getHttpServer())
         .post('/users')
         .send(data)
-        .set('Cookie', authenticatedUser.token)
+        .set('Cookie', adminUser.token)
       const responseBody = response.body as ErrorResponse
 
       expect(response.statusCode).toBe(400)
@@ -150,15 +152,12 @@ describe('Users (e2e)', () => {
         name: 'Duplicate User'
       }
 
-      await request(app.getHttpServer())
-        .post('/users')
-        .send(data)
-        .set('Cookie', authenticatedUser.token)
+      await request(app.getHttpServer()).post('/users').send(data).set('Cookie', adminUser.token)
 
       const response = await request(app.getHttpServer())
         .post('/users')
         .send(data)
-        .set('Cookie', authenticatedUser.token)
+        .set('Cookie', adminUser.token)
       const responseBody = response.body as ErrorResponse
 
       expect(response.statusCode).toBe(422)
@@ -171,7 +170,7 @@ describe('Users (e2e)', () => {
       const response = await request(app.getHttpServer())
         .patch('/users/test-user-id')
         .send({ email: 'updated@example.com' })
-        .set('Cookie', authenticatedUser.token)
+        .set('Cookie', adminUser.token)
       const responseBody = response.body as ErrorResponse
 
       expect(response.statusCode).toBe(404)
@@ -187,7 +186,7 @@ describe('Users (e2e)', () => {
       const response = await request(app.getHttpServer())
         .patch(`/users/${user.user.id}`)
         .send({ email: 'updated@example.com' })
-        .set('Cookie', authenticatedUser.token)
+        .set('Cookie', adminUser.token)
       const responseBody = response.body as UserWithRole
 
       expect(response.statusCode).toBe(200)
@@ -203,7 +202,7 @@ describe('Users (e2e)', () => {
       const response = await request(app.getHttpServer())
         .patch(`/users/${user.user.id}`)
         .send({ name: 'Updated User' })
-        .set('Cookie', authenticatedUser.token)
+        .set('Cookie', adminUser.token)
       const responseBody = response.body as UserWithRole
 
       expect(response.statusCode).toBe(200)
@@ -219,7 +218,7 @@ describe('Users (e2e)', () => {
       const response = await request(app.getHttpServer())
         .patch(`/users/${user.user.id}`)
         .send({ password: 'newpassword123' })
-        .set('Cookie', authenticatedUser.token)
+        .set('Cookie', adminUser.token)
 
       expect(response.statusCode).toBe(200)
     })
@@ -238,18 +237,36 @@ describe('Users (e2e)', () => {
       const response = await request(app.getHttpServer())
         .patch(`/users/${user.user.id}/role`)
         .send({ roleId: role.id })
-        .set('Cookie', authenticatedUser.token)
+        .set('Cookie', adminUser.token)
       const responseBody = response.body as UserWithRole
 
       expect(response.statusCode).toBe(200)
       expect(responseBody.roleId).toBe(role.id)
     })
 
-    it('should return 404 when user not found', async () => {
+    it('should return 404 when role not found', async () => {
+      const user = await createAuthenticatedUser(app, {
+        email: 'user-role-not-found@example.com',
+        name: 'User Role Not Found'
+      })
+
       const response = await request(app.getHttpServer())
-        .patch('/users/test-user-id/role')
-        .send({ roleId: 'arbitrary-role-id' })
-        .set('Cookie', authenticatedUser.token)
+        .patch(`/users/${user.user.id}/role`)
+        .send({ roleId: 'non-existent-role-id' })
+        .set('Cookie', adminUser.token)
+      const responseBody = response.body as ErrorResponse
+
+      expect(response.statusCode).toBe(404)
+      expect(responseBody.message).toContain('Role not found')
+    })
+
+    it('should return 404 when user not found', async () => {
+      const role = await testDb.prisma.role.findFirst({ where: { name: 'USER' } })
+
+      const response = await request(app.getHttpServer())
+        .patch('/users/non-existent-user-id/role')
+        .send({ roleId: role!.id })
+        .set('Cookie', adminUser.token)
       const responseBody = response.body as ErrorResponse
 
       expect(response.statusCode).toBe(404)
@@ -266,7 +283,7 @@ describe('Users (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .delete(`/users/${user.user.id}`)
-        .set('Cookie', authenticatedUser.token)
+        .set('Cookie', adminUser.token)
       const responseBody = response.body as UserWithRole
 
       expect(response.statusCode).toBe(200)
@@ -276,9 +293,100 @@ describe('Users (e2e)', () => {
     it('should return 404 when user not found', async () => {
       const response = await request(app.getHttpServer())
         .delete('/users/test-user-id')
-        .set('Cookie', authenticatedUser.token)
+        .set('Cookie', adminUser.token)
 
       expect(response.statusCode).toBe(404)
+    })
+  })
+
+  describe('Auth Guard — Unauthenticated access', () => {
+    it('should return 401 for GET /users without cookie', async () => {
+      const response = await request(app.getHttpServer()).get('/users')
+
+      expect(response.statusCode).toBe(401)
+    })
+
+    it('should return 401 for POST /users without cookie', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/users')
+        .send({ email: 'unauth@example.com', password: 'password123', name: 'Unauth' })
+
+      expect(response.statusCode).toBe(401)
+    })
+
+    it('should return 401 for PATCH /users/:id without cookie', async () => {
+      const response = await request(app.getHttpServer())
+        .patch(`/users/${authenticatedUser.user.id}`)
+        .send({ name: 'Hacked' })
+
+      expect(response.statusCode).toBe(401)
+    })
+
+    it('should return 401 for DELETE /users/:id without cookie', async () => {
+      const response = await request(app.getHttpServer()).delete(
+        `/users/${authenticatedUser.user.id}`
+      )
+
+      expect(response.statusCode).toBe(401)
+    })
+
+    it('should allow GET / without cookie (AllowAnonymous)', async () => {
+      const response = await request(app.getHttpServer()).get('/')
+
+      expect(response.statusCode).toBe(200)
+    })
+  })
+
+  describe('Auth Guard — Role-based access (USER role)', () => {
+    it('should allow GET /users for USER role', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/users')
+        .set('Cookie', authenticatedUser.token)
+
+      expect(response.statusCode).toBe(200)
+    })
+
+    it('should allow GET /users/:id for USER role', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/users/${authenticatedUser.user.id}`)
+        .set('Cookie', authenticatedUser.token)
+
+      expect(response.statusCode).toBe(200)
+    })
+
+    it('should deny POST /users for USER role', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/users')
+        .send({ email: 'denied@example.com', password: 'password123', name: 'Denied' })
+        .set('Cookie', authenticatedUser.token)
+
+      expect(response.statusCode).toBe(403)
+    })
+
+    it('should deny PATCH /users/:id for USER role', async () => {
+      const response = await request(app.getHttpServer())
+        .patch(`/users/${authenticatedUser.user.id}`)
+        .send({ name: 'Denied Update' })
+        .set('Cookie', authenticatedUser.token)
+
+      expect(response.statusCode).toBe(403)
+    })
+
+    it('should deny PATCH /users/:id/role for USER role', async () => {
+      const response = await request(app.getHttpServer())
+        .patch(`/users/${authenticatedUser.user.id}/role`)
+        .send({ roleId: 'some-role-id' })
+        .set('Cookie', authenticatedUser.token)
+
+      expect(response.statusCode).toBe(403)
+    })
+
+    it('should deny DELETE /users/:id for USER role', async () => {
+      const response = await request(app.getHttpServer())
+        .delete(`/users/${authenticatedUser.user.id}`)
+        .set('Cookie', authenticatedUser.token)
+
+      expect(response.statusCode).toBe(403)
     })
   })
 })
