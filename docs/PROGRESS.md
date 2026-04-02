@@ -1,35 +1,37 @@
 # Progress Tracking
 
-## Feature 01: Auth Guards
+## Feature 02: Products
 
-### Phase 1: Verify Session Role Data
+### Phase 1: Database Schema + Seed
 
-- [x] Write diagnostic test to inspect session data
-- [x] Configure role in session (additionalFields with fieldName mapping)
-- [x] Verify session contains role field
+- [x] Add Product model to Prisma schema
+- [x] Create migration
+- [x] Add seed data
 
-### Phase 2: Apply Decorators to Controllers
+### Phase 2: DTOs and Types
 
-- [x] Add `@Roles(['ADMIN'])` to Users write operations
-- [x] Verify AppController `@AllowAnonymous()` is in place
+- [x] CreateProductDto
+- [x] UpdateProductDto
+- [x] DTO barrel export
+- [x] Product type
+- [x] Types barrel export
 
-### Phase 3: Update Auth Test Helper
+### Phase 3: Service + Unit Tests
 
-- [x] Add `createAdminUser()` function
-- [x] Add `role` field to `AuthenticatedUser` type
+- [x] ProductsService with CRUD operations
+- [x] Service unit tests
 
-### Phase 4: Update Existing E2E Tests
+### Phase 4: Controller + Unit Tests
 
-- [x] Use admin user for write operation tests
-- [x] Verify all existing tests still pass
+- [x] ProductsController with role restrictions
+- [x] Controller unit tests
 
-### Phase 5: Add Auth Guard E2E Tests
+### Phase 5: Module and Wiring
 
-- [x] Unauthenticated access tests (401)
-- [x] Role-based access tests (USER vs ADMIN)
+- [x] ProductsModule
+- [x] Register in AppModule
 
-### Phase 6: Verify All Checks Pass
+### Phase 6: E2E Tests
 
-- [x] Unit tests (43 pass)
-- [x] E2E tests (36 pass)
-- [x] TypeScript, ESLint, Prettier all green
+- [x] CRUD E2E tests
+- [x] Auth guard E2E tests
