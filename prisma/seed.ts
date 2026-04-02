@@ -53,17 +53,20 @@ const seedUsers = async (roles: Role[]): Promise<User[]> => {
     {
       email: 'admin@example.com',
       name: 'Admin User',
-      roleId: adminRole.id
+      roleId: adminRole.id,
+      roleName: adminRole.name
     },
     {
       email: 'manager@example.com',
       name: 'Manager User',
-      roleId: managerRole.id
+      roleId: managerRole.id,
+      roleName: managerRole.name
     },
     {
       email: 'user@example.com',
       name: 'Regular User',
-      roleId: userRole.id
+      roleId: userRole.id,
+      roleName: userRole.name
     }
   ]
 
