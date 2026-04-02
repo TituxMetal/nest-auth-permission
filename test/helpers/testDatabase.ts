@@ -45,6 +45,7 @@ export const setupTestDatabase = async (): Promise<TestDatabase> => {
 export const cleanupTestDatabase = async (prisma: PrismaClient, dbPath: string): Promise<void> => {
   // Delete all records in correct order (respects foreign key constraints)
   // Order: child tables first, then parent tables
+  await prisma.product.deleteMany()
   await prisma.verification.deleteMany()
   await prisma.session.deleteMany()
   await prisma.account.deleteMany() // References user
