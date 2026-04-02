@@ -16,6 +16,7 @@ model User {
   email         String    @unique
   emailVerified Boolean   @default(false)
   image         String?
+  roleName      String?
   roleId        String?
 
   createdAt     DateTime  @default(now())
