@@ -154,7 +154,7 @@ bunx prisma studio       # Open Prisma Studio
 ```env
 DATABASE_URL="file:./dev.db"
 BETTER_AUTH_SECRET="[base64-secret]"
-BETTER_AUTH_BASE_URL="http://localhost:3000"
+BETTER_AUTH_BASE_URL="http://localhost:3000/api/auth"
 SESSION_SECRET="[uuid-secret]"
 ADMIN_EMAIL="admin@example.com"
 ```
