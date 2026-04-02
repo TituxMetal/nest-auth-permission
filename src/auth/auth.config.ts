@@ -9,6 +9,16 @@ export const createBetterAuthConfig = (prisma: PrismaClient) => {
     database: prismaAdapter(prisma, {
       provider: 'sqlite'
     }),
+    user: {
+      additionalFields: {
+        role: {
+          type: 'string' as const,
+          required: false,
+          returned: true,
+          fieldName: 'roleName'
+        }
+      }
+    },
     emailAndPassword: {
       enabled: true,
       // disableSignUp: true, // Disable Better Auth's signup endpoint - we handle it ourselves!
