@@ -21,7 +21,7 @@ export const createBetterAuthConfig = (prisma: PrismaClient) => {
     },
     emailAndPassword: {
       enabled: true,
-      // disableSignUp: true, // Disable Better Auth's signup endpoint - we handle it ourselves!
+      // Better Auth handles signup directly — hooks assign roles after signup
       minPasswordLength: 8,
       autoSignIn: true,
       password: {
@@ -41,4 +41,4 @@ export const createBetterAuthConfig = (prisma: PrismaClient) => {
   return betterAuth(config)
 }
 
-export type authInstance = ReturnType<typeof createBetterAuthConfig>['api']
+export type AuthInstance = ReturnType<typeof createBetterAuthConfig>['api']
