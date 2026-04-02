@@ -68,18 +68,27 @@ export const createAdminUser = async (
   app: INestApplication<Server>,
   userData?: { password?: string; name?: string }
 ): Promise<AuthenticatedUser> => {
+  const previousAdminEmail = process.env.ADMIN_EMAIL
   process.env.ADMIN_EMAIL = ADMIN_EMAIL
   const password = userData?.password ?? 'password123'
   const name = userData?.name ?? 'Admin User'
 
-  const result = await createAuthenticatedUser(app, {
-    email: ADMIN_EMAIL,
-    password,
-    name
-  })
+  try {
+    const result = await createAuthenticatedUser(app, {
+      email: ADMIN_EMAIL,
+      password,
+      name
+    })
 
-  return {
-    ...result,
-    user: { ...result.user, role: 'ADMIN' }
+    return {
+      ...result,
+      user: { ...result.user, role: 'ADMIN' }
+    }
+  } finally {
+    delete process.env.ADMIN_EMAIL
+
+    if (previousAdminEmail !== undefined) {
+      process.env.ADMIN_EMAIL = previousAdminEmail
+    }
   }
 }
